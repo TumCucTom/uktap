@@ -144,8 +144,8 @@ export default function App() {
           </div>
 
           <div className="clue">
-            <span className="clue-label">Where is…</span>
-            <p>{current.clue}</p>
+            <span className="clue-label">Find this place</span>
+            <p>{current.name}</p>
           </div>
 
           <MapBoard active={!revealed} revealed={revealed} onPinChange={(la, ln) => setPin([la, ln])} />

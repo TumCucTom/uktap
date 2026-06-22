@@ -2,10 +2,10 @@
 
 A UK-only daily geography game, inspired by [MapTap.gg](https://maptap.gg).
 
-Each day you get **5 clues** describing British places — cities, landmarks, and
-sites of history. Tap the map where you think each one is. The closer you are,
-the higher your score (0–100 per clue). Later rounds carry **×2 and ×3
-multipliers**, so a perfect day is **900 points**.
+Each day you're shown **5 British places** — cities, landmarks, and sites of
+history. Tap the map where you think each one is. The closer you are, the higher
+your score (0–100 per place). Later rounds carry **×2 and ×3 multipliers**, so a
+perfect day is **900 points**.
 
 ## Features
 
@@ -34,7 +34,7 @@ npm run preview
 
 ```
 src/
-  data/locations.ts    # the UK location dataset (name, coords, clue, difficulty)
+  data/locations.ts    # the UK location dataset (name, coords, difficulty)
   lib/game.ts          # daily puzzle selection, scoring, sharing
   lib/storage.ts       # streak & result persistence (localStorage)
   components/MapBoard.tsx   # the interactive Leaflet map
