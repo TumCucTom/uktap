@@ -27,6 +27,9 @@ body {
     linear-gradient(180deg, var(--bg-1), var(--bg-0));
   background-attachment: fixed;
   -webkit-font-smoothing: antialiased;
+  /* Stop pull-to-refresh / rubber-banding from hijacking map drags on touch. */
+  overscroll-behavior-y: contain;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .app {
@@ -36,6 +39,10 @@ body {
   display: flex;
   flex-direction: column;
   padding: 0 16px;
+  /* Respect notch / home-indicator safe areas on phones. */
+  padding-left: max(16px, env(safe-area-inset-left));
+  padding-right: max(16px, env(safe-area-inset-right));
+  padding-bottom: env(safe-area-inset-bottom);
 }
 
 /* ---- Top bar ---- */
@@ -273,9 +280,18 @@ button:active:not(:disabled) { transform: translateY(1px); }
 }
 
 @media (max-width: 480px) {
+  .home { padding-top: 24px; }
   .home h1 { font-size: 36px; }
+  .tagline { font-size: 16px; }
   .clue p { font-size: 22px; }
-  .stats-card { grid-template-columns: repeat(2, 1fr); }
+  .clue { padding: 14px 16px; }
+  .stats-card { grid-template-columns: repeat(2, 1fr); row-gap: 16px; }
   .reveal { flex-direction: column; align-items: stretch; }
   .reveal .primary { width: 100%; }
+}
+
+/* Short or landscape phones: keep the map from forcing the page to scroll. */
+@media (max-height: 720px) {
+  .map { height: 46vh; min-height: 260px; }
+  .home { padding-top: 16px; }
 }
