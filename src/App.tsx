@@ -204,7 +204,7 @@ export default function App() {
       )}
 
       <footer className="sitefoot">
-        UKTap · a UK-only daily geography game · inspired by MapTap
+        UKTap · a UK-only daily geography game · inspired by MapTap · Imagery © Esri
       </footer>
     </div>
   )

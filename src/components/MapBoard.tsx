@@ -2,19 +2,33 @@ import { useEffect, useState } from 'react'
 import {
   MapContainer,
   TileLayer,
-  CircleMarker,
+  Marker,
   Polyline,
   Tooltip,
   useMap,
   useMapEvents,
 } from 'react-leaflet'
-import { LatLngBounds } from 'leaflet'
+import { LatLngBounds, divIcon } from 'leaflet'
 import type { RoundResult } from '../lib/game'
 import { formatDistance } from '../lib/game'
 
 // Bounding box drawn generously around the UK so the whole country fits.
 const UK_BOUNDS = new LatLngBounds([49.7, -9.0], [61.1, 2.2])
 const UK_CENTER: [number, number] = [54.5, -3.2]
+
+// CSS-styled pins (divIcons) — no external image assets, fully themeable.
+const guessIcon = divIcon({
+  className: 'pin-wrap',
+  html: '<div class="pin pin-guess"></div>',
+  iconSize: [22, 22],
+  iconAnchor: [11, 11],
+})
+const targetIcon = divIcon({
+  className: 'pin-wrap',
+  html: '<div class="pin pin-target"></div>',
+  iconSize: [22, 22],
+  iconAnchor: [11, 11],
+})
 
 interface Props {
   /** Whether the player can still place/move a pin this round. */
@@ -49,7 +63,7 @@ function FitToReveal({ revealed }: { revealed: RoundResult | null }) {
       [revealed.location.lat, revealed.location.lng],
       [revealed.guessLat, revealed.guessLng],
     )
-    map.fitBounds(bounds, { padding: [60, 60], maxZoom: 9, animate: true })
+    map.flyToBounds(bounds, { padding: [70, 70], maxZoom: 9, duration: 0.8 })
   }, [revealed, map])
   return null
 }
@@ -72,49 +86,45 @@ export default function MapBoard({ active, revealed, onPinChange }: Props) {
       center={UK_CENTER}
       zoom={5}
       minZoom={5}
-      maxZoom={12}
+      maxZoom={17}
       maxBounds={UK_BOUNDS}
       maxBoundsViscosity={0.9}
       className="map"
-      attributionControl
+      attributionControl={false}
+      zoomControl={false}
     >
+      {/* Plain satellite imagery — no labels, roads, or place names. */}
       <TileLayer
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+        maxZoom={18}
       />
       <ClickHandler disabled={!active || !!revealed} onPick={handlePick} />
       <FitToReveal revealed={revealed} />
 
-      {pin && (
-        <CircleMarker
-          center={pin}
-          radius={8}
-          pathOptions={{ color: '#1d4ed8', fillColor: '#3b82f6', fillOpacity: 0.9 }}
-        >
-          <Tooltip permanent direction="top">Your guess</Tooltip>
-        </CircleMarker>
-      )}
+      {pin && <Marker position={pin} icon={guessIcon} interactive={false} />}
 
       {revealed && (
         <>
-          <CircleMarker
-            center={[revealed.location.lat, revealed.location.lng]}
-            radius={8}
-            pathOptions={{ color: '#b91c1c', fillColor: '#ef4444', fillOpacity: 0.9 }}
-          >
-            <Tooltip permanent direction="top">{revealed.location.name}</Tooltip>
-          </CircleMarker>
           <Polyline
             positions={[
               [revealed.guessLat, revealed.guessLng],
               [revealed.location.lat, revealed.location.lng],
             ]}
-            pathOptions={{ color: '#64748b', dashArray: '6 8' }}
+            pathOptions={{ color: '#f8fafc', weight: 2, dashArray: '4 8', opacity: 0.9 }}
           >
-            <Tooltip permanent direction="center">
+            <Tooltip permanent direction="center" className="dist-tip">
               {formatDistance(revealed.distanceKm)}
             </Tooltip>
           </Polyline>
+          <Marker
+            position={[revealed.location.lat, revealed.location.lng]}
+            icon={targetIcon}
+            interactive={false}
+          >
+            <Tooltip permanent direction="top" className="target-tip" offset={[0, -8]}>
+              {revealed.location.name}
+            </Tooltip>
+          </Marker>
         </>
       )}
     </MapContainer>
