@@ -37,8 +37,8 @@ function mattyIcon(mood: 'happy' | 'medium' | 'sad') {
   return divIcon({
     className: 'matty-wrap',
     html: `<div class="matty-marker"><img src="${MATTY_SRC[mood]}" alt="Matty" draggable="false" /></div>`,
-    iconSize: [54, 62],
-    iconAnchor: [27, 60],
+    iconSize: [54, 54],
+    iconAnchor: [27, 27],
   })
 }
 
@@ -133,7 +133,7 @@ export default function MapBoard({ active, revealed, onPinChange }: Props) {
             icon={mattyIcon(milesTier(revealed.distanceMiles).mood)}
             interactive={false}
           >
-            <Tooltip permanent direction="top" className="target-tip" offset={[0, -58]}>
+            <Tooltip permanent direction="top" className="target-tip" offset={[0, -30]}>
               Matty was in {revealed.location.name}
             </Tooltip>
           </Marker>
