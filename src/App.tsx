@@ -2,6 +2,7 @@ import { useMemo, useState, type CSSProperties } from 'react'
 import MapBoard from './components/MapBoard'
 import HowToPlay from './components/HowToPlay'
 import mattyAvatar from './assets/matty-happy.png'
+import matty2Avatar from './assets/matty2-happy.png'
 import {
   dailyPuzzle,
   practicePuzzle,
@@ -168,6 +169,10 @@ export default function App() {
             Matty’s hiding in five places across the UK. Tap the map where you think he
             is — the fewer total miles off, the better. One round is your <strong>double</strong>.
           </p>
+          <div className="home-mattys">
+            <span className="home-matty"><img src={mattyAvatar} alt="Matty" /></span>
+            <span className="home-matty"><img src={matty2Avatar} alt="The other Matty" /></span>
+          </div>
           <div className="home-stripe" />
           <div className="home-actions">
             {playedToday ? (

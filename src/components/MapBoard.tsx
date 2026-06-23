@@ -11,9 +11,12 @@ import {
 import { LatLngBounds, divIcon } from 'leaflet'
 import type { RoundResult } from '../lib/game'
 import { formatMiles, milesTier } from '../lib/game'
-import mattyHappy from '../assets/matty-happy.png'
-import mattyMedium from '../assets/matty-medium.png'
-import mattySad from '../assets/matty-sad.png'
+import matty1Happy from '../assets/matty-happy.png'
+import matty1Medium from '../assets/matty-medium.png'
+import matty1Sad from '../assets/matty-sad.png'
+import matty2Happy from '../assets/matty2-happy.png'
+import matty2Medium from '../assets/matty2-medium.png'
+import matty2Sad from '../assets/matty2-sad.png'
 
 // Bounding box drawn generously around the UK so the whole country fits.
 const UK_BOUNDS = new LatLngBounds([49.7, -9.0], [61.1, 2.2])
@@ -28,15 +31,24 @@ const guessIcon = divIcon({
 })
 // Matty himself marks where the place actually was — his expression reflects
 // how close the guess landed (happy = nailed it, sad = miles off).
-const MATTY_SRC: Record<'happy' | 'medium' | 'sad', string> = {
-  happy: mattyHappy,
-  medium: mattyMedium,
-  sad: mattySad,
+type Mood = 'happy' | 'medium' | 'sad'
+// Two interchangeable Mattys — which one is hiding is picked per reveal.
+const MATTY_SRC: Record<'a' | 'b', Record<Mood, string>> = {
+  a: { happy: matty1Happy, medium: matty1Medium, sad: matty1Sad },
+  b: { happy: matty2Happy, medium: matty2Medium, sad: matty2Sad },
 }
-function mattyIcon(mood: 'happy' | 'medium' | 'sad') {
+// Pseudo-random pick that's stable for a given reveal (so it doesn't flicker
+// on re-render) but varies play to play.
+function pickMatty(r: RoundResult): 'a' | 'b' {
+  const seed = Math.round(
+    Math.abs((r.guessLat + r.location.lat) * 1000 + (r.guessLng + r.location.lng) * 1000),
+  )
+  return seed % 2 === 0 ? 'a' : 'b'
+}
+function mattyIcon(mood: Mood, who: 'a' | 'b') {
   return divIcon({
     className: 'matty-wrap',
-    html: `<div class="matty-marker"><img src="${MATTY_SRC[mood]}" alt="Matty" draggable="false" /></div>`,
+    html: `<div class="matty-marker"><img src="${MATTY_SRC[who][mood]}" alt="Matty" draggable="false" /></div>`,
     iconSize: [54, 54],
     iconAnchor: [27, 27],
   })
@@ -130,7 +142,7 @@ export default function MapBoard({ active, revealed, onPinChange }: Props) {
           </Polyline>
           <Marker
             position={[revealed.location.lat, revealed.location.lng]}
-            icon={mattyIcon(milesTier(revealed.distanceMiles).mood)}
+            icon={mattyIcon(milesTier(revealed.distanceMiles).mood, pickMatty(revealed))}
             interactive={false}
           >
             <Tooltip permanent direction="top" className="target-tip" offset={[0, -30]}>
