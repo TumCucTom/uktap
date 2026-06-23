@@ -219,8 +219,8 @@ export default function App() {
                 onClick={() => setArmed((a) => !a)}
               >
                 {armed
-                  ? '⚡ Double armed — this round counts ×2 · tap to undo'
-                  : '⚡ Use your double here? · one per game, ×2 miles'}
+                  ? '⚡ Double on — counts ×2 · tap to undo'
+                  : '⚡ Use your double here? (×2 miles)'}
               </button>
             ))}
 
