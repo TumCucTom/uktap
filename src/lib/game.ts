@@ -145,5 +145,5 @@ export function buildShareText(key: string, results: RoundResult[]): string {
   const grid = results.map((r) => milesTier(r.distanceMiles).emoji).join('')
   const dbl = results.findIndex((r) => r.doubled)
   const dblNote = dbl >= 0 ? ` · ⚡R${dbl + 1}` : ''
-  return `Where's Matty? ${key}\n${total} mi${dblNote}\n${grid}\nwheresmatty.gg`
+  return `Where's Matty? ${key}\n${total} mi${dblNote}\n${grid}\nwheresmatty.xyz`
 }
