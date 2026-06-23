@@ -18,6 +18,7 @@ import {
   loadStats,
   recordDailyResult,
   saveResultRecord,
+  loadResultRecord,
   hasPlayedToday,
   hasSeenTutorial,
   markTutorialSeen,
@@ -98,9 +99,23 @@ export default function App() {
     const total = totalMiles(results)
     if (mode === 'daily') {
       const emoji = results.map((r) => milesTier(r.distanceMiles).emoji).join('')
-      saveResultRecord({ key: dayKey, miles: total, emoji })
+      saveResultRecord({ key: dayKey, miles: total, emoji, results })
       setStats(recordDailyResult(dayKey, total))
     }
+    setScreen('done')
+  }
+
+  // Re-show today's completed daily instead of letting it be replayed —
+  // until tomorrow's puzzle unlocks at UTC midnight.
+  function showTodaysResult() {
+    const rec = loadResultRecord(dayKey)
+    if (!rec?.results?.length) {
+      startGame('daily')
+      return
+    }
+    setMode('daily')
+    setResults(rec.results)
+    setCopied(false)
     setScreen('done')
   }
 
@@ -155,9 +170,15 @@ export default function App() {
           </p>
           <div className="home-stripe" />
           <div className="home-actions">
-            <button className="primary" onClick={() => startGame('daily')}>
-              {playedToday ? 'Replay today’s puzzle' : 'Play today’s puzzle'}
-            </button>
+            {playedToday ? (
+              <button className="primary" onClick={showTodaysResult}>
+                See today’s result
+              </button>
+            ) : (
+              <button className="primary" onClick={() => startGame('daily')}>
+                Play today’s puzzle
+              </button>
+            )}
             <button className="secondary" onClick={() => startGame('practice')}>
               Practice (random)
             </button>
@@ -169,7 +190,7 @@ export default function App() {
             <Stat label="Best (mi)" value={stats.played ? stats.bestMiles : '—'} />
           </div>
           {playedToday && (
-            <p className="muted">You’ve already completed today’s daily. Come back tomorrow!</p>
+            <p className="muted">Today’s puzzle is done — a new one unlocks at midnight (UTC).</p>
           )}
         </main>
       )}

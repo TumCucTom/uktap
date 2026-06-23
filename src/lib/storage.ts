@@ -1,6 +1,7 @@
 // Persists per-player stats and saved daily results in localStorage.
 
 import { todayKey } from './game'
+import type { RoundResult } from './game'
 
 // Bumped to v2 when scoring changed from "points, higher better" to
 // "total miles off, lower better" — the two are not comparable, so old
@@ -78,6 +79,8 @@ export interface SavedResult {
   key: string
   miles: number
   emoji: string
+  /** Full round-by-round results, so today's score can be re-shown. */
+  results: RoundResult[]
 }
 
 export function saveResultRecord(r: SavedResult): void {
