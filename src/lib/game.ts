@@ -50,8 +50,22 @@ function buildPuzzle(seed: number): UKLocation[] {
   return picks
 }
 
-/** The deterministic puzzle for a given day key. */
+// Hand-picked puzzles for specific dates that override the deterministic
+// generator. Keys are UTC date strings ("YYYY-MM-DD"); values are five
+// location ids in easy -> hard order. Use this to curate a particular day.
+const DAILY_OVERRIDES: Record<string, string[]> = {
+  '2026-06-23': ['edinburgh', 'snowdon', 'lochness', 'tintagel', 'johnogroats'],
+}
+
+/** The puzzle for a given day key — a curated override if set, else generated. */
 export function dailyPuzzle(key = todayKey()): UKLocation[] {
+  const override = DAILY_OVERRIDES[key]
+  if (override) {
+    const picks = override
+      .map((id) => LOCATIONS.find((l) => l.id === id))
+      .filter((l): l is UKLocation => Boolean(l))
+    if (picks.length === ROUNDS_PER_GAME) return picks
+  }
   return buildPuzzle(dayNumber(key) * 2654435761)
 }
 
