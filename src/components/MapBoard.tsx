@@ -10,7 +10,10 @@ import {
 } from 'react-leaflet'
 import { LatLngBounds, divIcon } from 'leaflet'
 import type { RoundResult } from '../lib/game'
-import { formatDistance } from '../lib/game'
+import { formatMiles, milesTier } from '../lib/game'
+import mattyHappy from '../assets/matty-happy.png'
+import mattyMedium from '../assets/matty-medium.png'
+import mattySad from '../assets/matty-sad.png'
 
 // Bounding box drawn generously around the UK so the whole country fits.
 const UK_BOUNDS = new LatLngBounds([49.7, -9.0], [61.1, 2.2])
@@ -23,12 +26,21 @@ const guessIcon = divIcon({
   iconSize: [22, 22],
   iconAnchor: [11, 11],
 })
-const targetIcon = divIcon({
-  className: 'pin-wrap',
-  html: '<div class="pin pin-target"></div>',
-  iconSize: [22, 22],
-  iconAnchor: [11, 11],
-})
+// Matty himself marks where the place actually was — his expression reflects
+// how close the guess landed (happy = nailed it, sad = miles off).
+const MATTY_SRC: Record<'happy' | 'medium' | 'sad', string> = {
+  happy: mattyHappy,
+  medium: mattyMedium,
+  sad: mattySad,
+}
+function mattyIcon(mood: 'happy' | 'medium' | 'sad') {
+  return divIcon({
+    className: 'matty-wrap',
+    html: `<div class="matty-marker"><img src="${MATTY_SRC[mood]}" alt="Matty" draggable="false" /></div>`,
+    iconSize: [54, 62],
+    iconAnchor: [27, 60],
+  })
+}
 
 interface Props {
   /** Whether the player can still place/move a pin this round. */
@@ -113,16 +125,16 @@ export default function MapBoard({ active, revealed, onPinChange }: Props) {
             pathOptions={{ color: '#f8fafc', weight: 2, dashArray: '4 8', opacity: 0.9 }}
           >
             <Tooltip permanent direction="center" className="dist-tip">
-              {formatDistance(revealed.distanceKm)}
+              {formatMiles(revealed.distanceMiles)}
             </Tooltip>
           </Polyline>
           <Marker
             position={[revealed.location.lat, revealed.location.lng]}
-            icon={targetIcon}
+            icon={mattyIcon(milesTier(revealed.distanceMiles).mood)}
             interactive={false}
           >
-            <Tooltip permanent direction="top" className="target-tip" offset={[0, -8]}>
-              {revealed.location.name}
+            <Tooltip permanent direction="top" className="target-tip" offset={[0, -58]}>
+              Matty was in {revealed.location.name}
             </Tooltip>
           </Marker>
         </>

@@ -2,16 +2,20 @@
 
 import { todayKey } from './game'
 
-const STATS_KEY = 'uktap.stats.v1'
-const RESULT_PREFIX = 'uktap.result.'
+// Bumped to v2 when scoring changed from "points, higher better" to
+// "total miles off, lower better" — the two are not comparable, so old
+// records are intentionally not migrated.
+const STATS_KEY = 'uktap.stats.v2'
+const RESULT_PREFIX = 'uktap.result.v2.'
 
 export interface Stats {
   played: number
   currentStreak: number
   maxStreak: number
   lastDay: string | null // YYYY-MM-DD
-  bestScore: number
-  totalScore: number
+  /** Lowest total-miles score ever achieved (best = fewest). 0 = none yet. */
+  bestMiles: number
+  totalMiles: number
 }
 
 const EMPTY_STATS: Stats = {
@@ -19,8 +23,8 @@ const EMPTY_STATS: Stats = {
   currentStreak: 0,
   maxStreak: 0,
   lastDay: null,
-  bestScore: 0,
-  totalScore: 0,
+  bestMiles: 0,
+  totalMiles: 0,
 }
 
 export function loadStats(): Stats {
@@ -48,7 +52,7 @@ function isYesterday(prev: string, current: string): boolean {
 }
 
 /** Record a completed daily game and return the updated stats. */
-export function recordDailyResult(key: string, score: number): Stats {
+export function recordDailyResult(key: string, miles: number): Stats {
   const stats = loadStats()
   if (stats.lastDay === key) return stats // already counted today
 
@@ -62,8 +66,9 @@ export function recordDailyResult(key: string, score: number): Stats {
     currentStreak,
     maxStreak: Math.max(stats.maxStreak, currentStreak),
     lastDay: key,
-    bestScore: Math.max(stats.bestScore, score),
-    totalScore: stats.totalScore + score,
+    // Best = fewest miles. First-ever game seeds the record directly.
+    bestMiles: stats.played === 0 ? miles : Math.min(stats.bestMiles, miles),
+    totalMiles: stats.totalMiles + miles,
   }
   saveStats(updated)
   return updated
@@ -71,7 +76,7 @@ export function recordDailyResult(key: string, score: number): Stats {
 
 export interface SavedResult {
   key: string
-  score: number
+  miles: number
   emoji: string
 }
 
@@ -94,4 +99,23 @@ export function loadResultRecord(key: string): SavedResult | null {
 
 export function hasPlayedToday(): boolean {
   return loadResultRecord(todayKey()) !== null
+}
+
+const TUTORIAL_KEY = 'uktap.tutorial.v1'
+
+/** Whether the player has dismissed the first-time how-to-play tutorial. */
+export function hasSeenTutorial(): boolean {
+  try {
+    return localStorage.getItem(TUTORIAL_KEY) === '1'
+  } catch {
+    return false
+  }
+}
+
+export function markTutorialSeen(): void {
+  try {
+    localStorage.setItem(TUTORIAL_KEY, '1')
+  } catch {
+    /* ignore quota / private-mode errors */
+  }
 }

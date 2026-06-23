@@ -1,9 +1,9 @@
 import { LOCATIONS, type UKLocation } from '../data/locations'
 
 export const ROUNDS_PER_GAME = 5
-// Later rounds are worth more, mirroring MapTap's escalating multipliers.
-export const ROUND_MULTIPLIERS = [1, 1, 2, 2, 3]
-export const MAX_SCORE = ROUND_MULTIPLIERS.reduce((a, m) => a + m * 100, 0) // 900
+// Conversion for the scoring system: distances are measured to the player in
+// miles, and the score is the *total* miles off — lower is better, golf-style.
+export const KM_PER_MILE = 1.609344
 
 /** Today's puzzle key in UTC, e.g. "2026-06-22". */
 export function todayKey(date = new Date()): string {
@@ -76,64 +76,74 @@ export function haversineKm(
   return 2 * R * Math.asin(Math.sqrt(h))
 }
 
-/**
- * Score 0–100 for a single guess. Within 5km is a perfect 100; the score
- * decays exponentially with distance and hits 0 around 500km — a sensible
- * scale for the size of the UK.
- */
-export function scoreForDistance(distanceKm: number): number {
-  if (distanceKm <= 5) return 100
-  const score = 100 * Math.exp(-distanceKm / 120)
-  return Math.max(0, Math.round(score))
-}
-
 export interface RoundResult {
   location: UKLocation
   guessLat: number
   guessLng: number
   distanceKm: number
-  baseScore: number
-  multiplier: number
-  points: number
+  /** Whole miles between the guess and the target — the accuracy of the pin. */
+  distanceMiles: number
+  /** Whether the player spent their double on this round. */
+  doubled: boolean
+  /** Miles this round adds to the total: distanceMiles, ×2 when doubled. */
+  scoreMiles: number
 }
 
 export function makeRoundResult(
   location: UKLocation,
-  roundIndex: number,
   guessLat: number,
   guessLng: number,
+  doubled: boolean,
 ): RoundResult {
   const distanceKm = haversineKm(location.lat, location.lng, guessLat, guessLng)
-  const baseScore = scoreForDistance(distanceKm)
-  const multiplier = ROUND_MULTIPLIERS[roundIndex] ?? 1
+  const distanceMiles = Math.round(distanceKm / KM_PER_MILE)
   return {
     location,
     guessLat,
     guessLng,
     distanceKm,
-    baseScore,
-    multiplier,
-    points: baseScore * multiplier,
+    distanceMiles,
+    doubled,
+    scoreMiles: distanceMiles * (doubled ? 2 : 1),
   }
 }
 
-/** Emoji rating per round for the shareable result grid. */
-export function scoreEmoji(baseScore: number): string {
-  if (baseScore >= 95) return '🟩'
-  if (baseScore >= 70) return '🟨'
-  if (baseScore >= 40) return '🟧'
-  if (baseScore > 0) return '🟥'
-  return '⬛'
+/** Total miles off across a game — this is the score, lower is better. */
+export function totalMiles(results: RoundResult[]): number {
+  return results.reduce((a, r) => a + r.scoreMiles, 0)
 }
 
-export function formatDistance(km: number): string {
-  if (km < 1) return `${Math.round(km * 1000)} m`
-  if (km < 10) return `${km.toFixed(1)} km`
-  return `${Math.round(km)} km`
+export interface Tier {
+  label: string
+  color: string
+  emoji: string
+  /** Which Matty face to show on the map for this accuracy. */
+  mood: 'happy' | 'medium' | 'sad'
+}
+
+/**
+ * Accuracy tier for a single pin, by how many miles off it landed. Drives the
+ * reveal badge, the progress-dot colours, the result rows, the share grid, and
+ * Matty's expression on the map — so they all always agree. Thresholds are
+ * tuned to the ~600-mile span of GB.
+ */
+export function milesTier(miles: number): Tier {
+  if (miles <= 5) return { label: 'Found him!', color: '#34d399', emoji: '🟩', mood: 'happy' }
+  if (miles <= 30) return { label: 'Warm', color: '#facc15', emoji: '🟨', mood: 'happy' }
+  if (miles <= 80) return { label: 'Close-ish', color: '#fb923c', emoji: '🟧', mood: 'medium' }
+  if (miles <= 200) return { label: 'Chilly', color: '#ef4444', emoji: '🟥', mood: 'medium' }
+  return { label: 'Stone cold', color: '#64748b', emoji: '⬛', mood: 'sad' }
+}
+
+export function formatMiles(miles: number): string {
+  if (miles <= 0) return 'spot on'
+  return `${miles.toLocaleString('en-GB')} mi`
 }
 
 export function buildShareText(key: string, results: RoundResult[]): string {
-  const total = results.reduce((a, r) => a + r.points, 0)
-  const grid = results.map((r) => scoreEmoji(r.baseScore)).join('')
-  return `UKTap ${key}\n${total}/${MAX_SCORE}\n${grid}\nuktap.gg`
+  const total = totalMiles(results)
+  const grid = results.map((r) => milesTier(r.distanceMiles).emoji).join('')
+  const dbl = results.findIndex((r) => r.doubled)
+  const dblNote = dbl >= 0 ? ` · ⚡R${dbl + 1}` : ''
+  return `Where's Matty? ${key}\n${total} mi${dblNote}\n${grid}\nwheresmatty.gg`
 }
